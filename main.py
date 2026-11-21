@@ -169,8 +169,10 @@ st.markdown(f"""
 <div class="banner">
 <h1>🌱 {school_name or '학교명 미확정'} 극지식물 개체별 생육 차이 분석 대시보드</h1>
 <p style="margin-top:6px;color:#333;">
-같은 스마트팜에서 함께 자란 극지식물도 개체마다 잎 수·길이·무게가 왜 다른지, 잎 수와 지상부 길이 중 무엇이 생중량을 더 잘 설명하는지(가설 1),
-그리고 지상부·지하부 중 어느 부분이 개체 간 상대적 차이를 더 크게 만드는지(가설 2)를 데이터로 확인하는 대시보드입니다.
+같은 스마트팜에서 함께 자란 극지식물도 개체마다 잎 수·길이·무게가 왜 다른지,
+잎 수와 지상부 길이 중 무엇이 생중량을 더 잘 설명하는지(가설 1),
+그리고 지상부·지하부 중 어느 부분이 개체 간 상대적 차이를 더 크게 만드는지(가설 2)를
+데이터로 확인하는 대시보드입니다.
 </p>
 </div>
 """, unsafe_allow_html=True)
@@ -193,11 +195,11 @@ with tabs[0]:
 <li>잎 수와 지상부 길이 중 <b>생중량과 더 밀접한 지표</b>는 무엇인지 (가설 1)</li>
 <li>지상부·지하부 중 <b>평균 대비 상대적 변동</b>이 더 큰 부분은 어디인지 (가설 2)</li>
 </ul>
-<p>를 데이터로 확인합니다. 1차시 보고서에서 세운 <b>탐색적 가설</b>이므로, '증명'이 아니라 이번 표본에서 <b>지지됨 / 지지되지 않음</b>으로 판단합니다.</p>
+<p>를 데이터로 확인합니다. 1차시 보고서에서 세운 <b>탐색적 가설</b>이므로,
+'증명'이 아니라 이번 표본에서 <b>지지됨 / 지지되지 않음</b>으로 판단합니다.</p>
 </div>
 """, unsafe_allow_html=True)
 
-        # - 가설 카드
         col_h1, col_h2 = st.columns(2)
         with col_h1:
             st.markdown("""
@@ -214,16 +216,14 @@ with tabs[0]:
 </div>
 """, unsafe_allow_html=True)
 
-        # 데이터 기반 결론 (가설 판정)
-        if growth_df is not None and growth_df.empty is False:
+        if growth_df is not None and not growth_df.empty:
             has_w = "생중량" in growth_df.columns
             has_l = "잎 수" in growth_df.columns
             has_s = "지상부 길이" in growth_df.columns
-            has_r = "지하부 길이" in growth_df.columns
             has_smass = "지상부 질량" in growth_df.columns
             has_rmass = "지하부 질량" in growth_df.columns
         else:
-            has_w = has_l = has_s = has_r = has_smass = has_rmass = False
+            has_w = has_l = has_s = has_smass = has_rmass = False
 
         r_leaf = pearson_corr(growth_df, "잎 수", "생중량") if has_w and has_l else None
         r_shoot = pearson_corr(growth_df, "지상부 길이", "생중량") if has_w and has_s else None
@@ -243,7 +243,6 @@ with tabs[0]:
                 if r_leaf is not None and r_shoot is not None:
                     stronger = "잎 수" if abs(r_leaf) > abs(r_shoot) else "지상부 길이"
                     stronger_r = r_leaf if stronger == "잎 수" else r_shoot
-                    weaker_r = r_shoot if stronger == "잎 수" else r_leaf
                     verdict_h1 = "지지됨 ✅" if abs(r_leaf) > abs(r_shoot) else "지지되지 않음 ⚠️"
                     st.markdown(f"""
 <div class="conclusion-box">
@@ -268,7 +267,6 @@ with tabs[0]:
                 else:
                     st.info("가설 2 판정에 필요한 지상부·지하부 질량 열이 있어야 해요.")
 
-        # --- 핵심 숫자 카드 ---
         st.markdown('<div class="kpi-card"><h3 style="margin-top:0;">📌 핵심 숫자</h3></div>', unsafe_allow_html=True)
         c1, c2, c3, c4, c5, c6 = st.columns(6)
 
@@ -299,7 +297,6 @@ with tabs[0]:
             c5.metric("환경 기록 수", "—")
             c6.metric("기록 기간", "—")
 
-        # --- 데이터 점검 표 ---
         st.markdown('<div class="kpi-card"><h3 style="margin-top:0;">🔍 데이터 점검</h3></div>', unsafe_allow_html=True)
         st.caption("각 열의 유효 값(유효 개수)과 빈 값 개수를 확인해요. 유효 개수가 0이면 그 열은 분석에 쓸 수 없어요.")
         rows = []
@@ -315,7 +312,6 @@ with tabs[0]:
                     rows.append({"데이터": label, "열": col, "유효 개수": valid, "빈 값 개수": na})
         st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
 
-        # --- 통계 용어 설명 ---
         st.markdown('<div class="kpi-card"><h3 style="margin-top:0;">📖 통계 용어 짧은 설명</h3></div>', unsafe_allow_html=True)
         st.write("• **평균**: 여러 값을 더해 개수로 나눈 대표값")
         st.write("• **중앙값**: 값을 크기순으로 나열했을 때 한가운데 있는 값 (이상치에 덜 영향)")
@@ -360,7 +356,6 @@ with tabs[1]:
             sph_leaf = spearman_rank_corr(growth_df, "잎 수", "생중량")
             sph_shoot = spearman_rank_corr(growth_df, "지상부 길이", "생중량")
 
-            # 지표 카드
             c1, c2, c3 = st.columns(3)
             c1.metric("잎 수 — 피어슨 r", f"{r_leaf:.3f}" if r_leaf is not None else "—")
             c2.metric("지상부 길이 — 피어슨 r", f"{r_shoot:.3f}" if r_shoot is not None else "—")
@@ -370,7 +365,6 @@ with tabs[1]:
             c5.metric("더 강한 지표", "잎 수 ✅" if r_leaf is not None and r_shoot is not None and abs(r_leaf) > abs(r_shoot) else ("지상부 길이 🟡" if r_leaf is not None and r_shoot is not None else "—"))
             st.caption("※ 스피어만 ρ는 값을 '순위'로 바꾼 뒤 상관 계산한 값이에요. 선형뿐 아니라 '한쪽이 커지면 다른 쪽도 커지는' 단조 관계도 반영해요.")
 
-            # 산점도 2개 나란히 + 추세선
             fig2 = make_subplots(rows=1, cols=2, subplot_titles=("🍃 잎 수 vs 생중량", "📏 지상부 길이 vs 생중량"),
                                  horizontal_spacing=0.12)
             dL = growth_df[["잎 수", "생중량"]].dropna()
@@ -393,9 +387,8 @@ with tabs[1]:
             fig2.update_yaxes(title_text="생중량 (g)", row=1, col=2)
             fig2.update_layout(font=dict(family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"), height=420)
             st.plotly_chart(fig2, width="stretch")
-            st.markdown('<p class="ts-line">이 그래프 읽는 법: 점 하나가 개체 하나예요. 점이 추세선 가까이에 모여 있을수록 두 지표가 함께 변하고, r 값이 1 또는 −1에 가까울수록 관계가 강해요.</p>', unsafe_allow_html=True)
+            st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: 점 하나가 개체 하나예요. 점이 추세선 가까이에 모여 있을수록 두 지표가 함께 변하고, r 값이 1 또는 −1에 가까울수록 관계가 강해요.</p>", unsafe_allow_html=True)
 
-            # 상관계수 막대그래프 (잎 수, 지상부 길이, 지하부 길이)
             cand = []
             if has_l:
                 cand.append(("잎 수", pearson_corr(growth_df, "잎 수", "생중량")))
@@ -409,9 +402,8 @@ with tabs[1]:
                               color_continuous_scale="RdYlGn", title="생중량과 각 생육 지표의 피어슨 r 비교")
                 figr.update_layout(font=dict(family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"))
                 st.plotly_chart(figr, width="stretch")
-                st.markdown('<p class="ts-line">이 그래프 읽는 법: 막대 높이가 r 값의 크기예요. 잎 수 막대가 지상부 길이 막대보다 높고 양수면, 잎 수가 생중량과 더 강한 양의 관계라는 뜻이에요.</p>', unsafe_allow_html=True)
+                st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: 막대 높이가 r 값의 크기예요. 잎 수 막대가 지상부 길이 막대보다 높고 양수면, 잎 수가 생중량과 더 강한 양의 관계라는 뜻이에요.</p>", unsafe_allow_html=True)
 
-            # 예측: 잎 수로 생중량 예측 (np.polyfit) + 슬라이더
             if len(leaf) >= 2 and len(set(leaf)) >= 2:
                 sl, il = np.polyfit(leaf, w, 1)
                 min_leaf = int(leaf.min())
@@ -422,7 +414,6 @@ with tabs[1]:
                 st.metric("🧮 예측 생중량 (잎 수 모형)", f"{pred:.2f} g")
                 st.warning("⚠️ 이 값은 잎 수와 생중량의 직선 관계만 반영한 추정치예요. 실제 무게를 보장하지 않아요.")
 
-            # 교차검증 RMSE 표 (LOOCV)
             mean_w = growth_df["생중량"].dropna().mean()
             rows_rmse = []
             err_leaf = []
@@ -460,7 +451,6 @@ with tabs[1]:
                 st.dataframe(rmse_tbl, width="stretch", hide_index=True)
                 st.caption("※ LOOCV: 개체 하나씩 빼고 나머지를 이용해 그 개체를 예측하는 방식. 표본이 작을수록 불확실성이 커요.")
 
-            # 상위·하위 25% 그룹 비교
             mean_w_per = growth_df.groupby("개체번호")["생중량"].mean().reset_index().sort_values("생중량", ascending=False).reset_index(drop=True)
             n_ind = len(mean_w_per)
             t25 = int(np.ceil(n_ind * 0.25))
@@ -494,15 +484,15 @@ with tabs[1]:
                                color_discrete_map={"상위 25% 평균": "#FF7B00", "하위 25% 평균": "#B0B0B0"})
                 figtb.update_layout(font=dict(family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"))
                 st.plotly_chart(figtb, width="stretch")
-                st.markdown('<p class="ts-line">이 그래프 읽는 법: 주황 막대가 상위 25%, 회색 막대가 하위 25%예요. 잎 수·지상부 길이·질량 모두 상위 그룹이 높으면 생중량 차이와의 관련성을 보여줘요.</p>', unsafe_allow_html=True)
+                st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: 주황 막대가 상위 25%, 회색 막대가 하위 25%예요. 잎 수·지상부 길이·질량 모두 상위 그룹이 높으면 생중량 차이와의 관련성을 보여줘요.</p>", unsafe_allow_html=True)
 
-            # 판정 박스
             if r_leaf is not None and r_shoot is not None:
                 stronger_note = "잎 수가 지상부 길이보다 생중량과 더 강한 상관을 보였으므로" if abs(r_leaf) > abs(r_shoot) else "지상부 길이가 잎 수보다 생중량과 더 강한 상관을 보였으므로"
+                verdict_word = "지지됨" if abs(r_leaf) > abs(r_shoot) else "지지되지 않음"
                 st.markdown(f"""
 <div class="conclusion-box">
-<b>📊 판정: 가설 1 — {('지지됨 ✅' if abs(r_leaf) > abs(r_shoot) else '지지되지 않음 ⚠️')}</b><br>
- 근거: 잎 수 r = {r_leaf:.3f}, 지상부 길이 r = {r_shoot:.3f} → {stronger_note} 가설 1이 {('지지됨' if abs(r_leaf) > abs(r_shoot) else '지지되지 않음')}.<br>
+<b>📊 판정: 가설 1 — {verdict_word} ✅</b><br>
+ 근거: 잎 수 r = {r_leaf:.3f}, 지상부 길이 r = {r_shoot:.3f} → {stronger_note} 가설 1이 {verdict_word}.<br>
  ⚠️ 상관관계일 뿐 <b>원인</b>을 뜻하지는 않아요. 잎 수가 많아서 무게가 큰지, 무게가 커서 잎이 많은지는 이 자료만으로 단정할 수 없어요.
 </div>
 """, unsafe_allow_html=True)
@@ -556,17 +546,14 @@ with tabs[2]:
                                title="지상부·지하부 질량 변동계수(CV) 비교")
                 figcv.update_layout(font=dict(family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"))
                 st.plotly_chart(figcv, width="stretch")
-                st.markdown('<p class="ts-line">이 그래프 읽는 법: CV가 클수록 '평균에 비해' 값이 들쭉날쭉하다는 뜻이에요. 지하부 CV 막대가 더 높으면 가설 2 방향이에요.</p>', unsafe_allow_html=True)
+                st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: CV가 클수록 '평균에 비해' 값이 들쭉날쭉하다는 뜻이에요. 지하부 CV 막대가 더 높으면 가설 2 방향이에요.</p>", unsafe_allow_html=True)
 
                 rows_t = []
-                for label, series in [("지상부 질량", shoot), ("지하부 질량", root)]:
-                    rows_t.append({"부분": label, "평균 (g)": m_shoot if label == "지상부 질량" else m_root,
-                                   "표준편차 (g)": sd_shoot if label == "지상부 질량" else sd_root,
-                                   "분산 (g²)": var_shoot if label == "지상부 질량" else var_root,
-                                   "CV (%)": cv_shoot if label == "지상부 질량" else cv_root})
+                for label, m, sd, var, cv in [("지상부 질량", m_shoot, sd_shoot, var_shoot, cv_shoot),
+                                                ("지하부 질량", m_root, sd_root, var_root, cv_root)]:
+                    rows_t.append({"부분": label, "평균 (g)": m, "표준편차 (g)": sd, "분산 (g²)": var, "CV (%)": cv})
                 st.dataframe(pd.DataFrame(rows_t), width="stretch", hide_index=True)
 
-                # 상자그림
                 figbx = make_subplots(rows=1, cols=2, subplot_titles=("지상부 질량 분포", "지하부 질량 분포"), horizontal_spacing=0.15)
                 figbx.add_trace(go.Box(y=shoot, name="지상부 질량", fillcolor="#2196F3", line=dict(color="#1565C0")), row=1, col=1)
                 figbx.add_trace(go.Box(y=root, name="지하부 질량", fillcolor="#795548", line=dict(color="#5D4037")), row=1, col=2)
@@ -574,17 +561,18 @@ with tabs[2]:
                 figbx.update_yaxes(title_text="질량 (g)", row=1, col=2)
                 figbx.update_layout(font=dict(family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"), height=360)
                 st.plotly_chart(figbx, width="stretch")
-                st.markdown('<p class="ts-line">이 그래프 읽는 법: 상자그림의 상자 높이는 중앙 50% 범위, 중앙선은 중앙값, 수염은 극단값을 제외한 범위예요.</p>', unsafe_allow_html=True)
+                st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: 상자그림의 상자 높이는 중앙 50% 범위, 중앙선은 중앙값, 수염은 극단값을 제외한 범위예요.</p>", unsafe_allow_html=True)
 
-                st.markdown("""
+                st.markdown(f"""
 <div class="note-box">
 <b>📌 주의: 평균 크기가 다른 두 부분을 비교할 때</b><br>
-분산(절대적인 흩어짐, g²)은 평균 자체가 큰 지상부가 더 클 수 있어요. 그래서 이번 비교는 <b>평균에 '비한' 퍼짐</b>인 변동계수(CV)로 판단해요.<br>
-현재 계산값: 지상부 평균 {mean_s:.2f} g vs 지하부 평균 {mean_r:.2f} g → 평균은 지상부가 더 크지만, <b>CV</b>가 더 큰 쪽이 '상대적 차이'가 더 큰 쪽이에요.
+분산(절대적인 흩어짐, g²)은 평균 자체가 큰 지상부가 더 클 수 있어요.
+그래서 이번 비교는 <b>평균에 '비한' 퍼짐</b>인 변동계수(CV)로 판단해요.<br>
+현재 계산값: 지상부 평균 {m_shoot:.2f} g vs 지하부 평균 {m_root:.2f} g → 평균은 지상부가 더 크지만,
+<b>CV</b>가 더 큰 쪽이 '상대적 차이'가 더 큰 쪽이에요.
 </div>
-""".format(mean_s=m_shoot, mean_r=m_root), unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-                # 지하부 질량 0g 개체 확인 + 제외 후 CV 재점검
                 has_zero_mask = growth_df["지하부 질량"] == 0
                 zero_count = int(has_zero_mask.sum())
                 if zero_count > 0:
@@ -603,16 +591,16 @@ with tabs[2]:
                             cv_root_no0 = root_no0.std(ddof=1) / root_no0.mean() * 100
                             direction = "유지됨 ✅" if cv_root_no0 > cv_shoot else "바뀜 ⚠️"
                             st.metric("지하부 CV (0 g 제외 후)", f"{cv_root_no0:.2f}%")
+                            verdict_dir = "지지" if cv_root_no0 > cv_shoot else "반전"
                             st.markdown(f"""
 <div class="conclusion-box">
 <b>📊 0 g 제외 후 방향 유지 여부</b><br>
- 지상부 CV = {cv_shoot:.2f}%, 지하부 CV (0 g 제외) = {cv_root_no0:.2f}% → 가설 2 방향({'지지' if cv_root_no0 > cv_shoot else '반전'}) = <b>{direction}</b>
+ 지상부 CV = {cv_shoot:.2f}%, 지하부 CV (0 g 제외) = {cv_root_no0:.2f}% → 가설 2 방향({verdict_dir}) = <b>{direction}</b>
 </div>
 """, unsafe_allow_html=True)
                         else:
                             st.info("0 g을 제외한 뒤에도 지하부 유효 값이 3개 미만이거나 평균이 0 이하라 CV를 다시 구할 수 없어요.")
 
-                # 판정
                 if cv_root > cv_shoot:
                     st.markdown(f"""
 <div class="conclusion-box">
@@ -655,7 +643,7 @@ with tabs[3]:
                 figh.update_xaxes(title_text="생중량 (g)")
                 figh.update_layout(font=dict(family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"))
                 st.plotly_chart(figh, width="stretch")
-                st.markdown('<p class="ts-line">이 그래프 읽는 법: 막대 높이가 그 구간(생중량 범위)에 속하는 개체 수예요. 파란색 점선(평균)과 주황색 점선(중앙값) 위치를 비교해 보세요.</p>', unsafe_allow_html=True)
+                st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: 막대 높이가 그 구간(생중량 범위)에 속하는 개체 수예요. 파란색 점선(평균)과 주황색 점선(중앙값) 위치를 비교해 보세요.</p>", unsafe_allow_html=True)
 
                 c1, c2, c3, c4 = st.columns(4)
                 c1.metric("평균 생중량", f"{mean_w:.2f} g")
@@ -664,7 +652,6 @@ with tabs[3]:
                 c4.metric("CV", f"{cv_w:.1f}%" if cv_w is not None else "—")
                 st.caption("※ CV는 표준편차 ÷ 평균 × 100이에요. 평균이 다른 것끼리 상대적 퍼짐을 비교할 때 써요.")
 
-            # 사이드바에서 고른 항목에서 막대그래프 (상위·하위 5 강조)
             order_items = []
             if "지상부 길이" in growth_df.columns:
                 order_items.append("지상부 길이")
@@ -700,9 +687,8 @@ with tabs[3]:
                     figb.update_traces(marker_color=colors, marker_line_width=0.4)
                     figb.update_layout(font=dict(family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"))
                     st.plotly_chart(figb, width="stretch")
-                    st.markdown('<p class="ts-line">이 그래프 읽는 법: 왼쪽이 가장 큰 개체, 오른쪽이 가장 작은 개체예요. 주황은 상위 5, 빨강은 하위 5예요. 개체번호는 숫자로 표시될 수도 있고 A1, A2처럼 글자로 표시될 수도 있어요.</p>', unsafe_allow_html=True)
+                    st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: 왼쪽이 가장 큰 개체, 오른쪽이 가장 작은 개체예요. 주황은 상위 5, 빨강은 하위 5예요. 개체번호는 숫자로 표시될 수도 있고 A1, A2처럼 글자로 표시될 수도 있어요.</p>", unsafe_allow_html=True)
 
-            # 상관계수 히트맵 (개체번호 제외)
             num_cols = [c for c in growth_df.columns if pd.api.types.is_numeric_dtype(growth_df[c]) and c != "개체번호"]
             if len(num_cols) >= 2:
                 corr = growth_df[num_cols].corr()
@@ -710,18 +696,16 @@ with tabs[3]:
                 figh2 = px.imshow(corr, text_auto=".2f", color_continuous_scale=heat_colors, title="생육 변수 상관계수 히트맵 (개체번호 제외)")
                 figh2.update_layout(font=dict(family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"))
                 st.plotly_chart(figh2, width="stretch")
-                st.markdown('<p class="ts-line">이 그래프 읽는 법: 1에 가까울수록 진한 초록(같이 증가), −1에 가까울수록 진한 빨강(하나 증가하면 다른 하나 감소), 0에 가까우면 흰색이에요.</p>', unsafe_allow_html=True)
+                st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: 1에 가까울수록 진한 초록(같이 증가), −1에 가까울수록 진한 빨강(하나 증가하면 다른 하나 감소), 0에 가까우면 흰색이에요.</p>", unsafe_allow_html=True)
             else:
                 st.info("상관계수 히트맵을 그리려면 숫자 열이 2개 이상 필요해요.")
 
-            # CSV 다운로드
             with st.expander("🌱 생육 데이터 원본 및 CSV 다운로드"):
                 st.dataframe(growth_df, width="stretch")
                 csv_bytes = growth_df.to_csv(index=False).encode("utf-8-sig")
                 fname = growth_file.name if growth_file is not None else "growth.csv"
                 st.download_button("📥 생육 CSV 다운로드", csv_bytes, file_name=fname, mime="text/csv")
 
-            # 데이터 점검 (생육)
             st.markdown('<div class="kpi-card"><h3 style="margin-top:0;">🔍 생육 데이터 점검 (열별 유효·빈 값)</h3></div>', unsafe_allow_html=True)
             rows = []
             for col in growth_df.columns:
@@ -746,7 +730,8 @@ with tabs[4]:
 <div class="note-box">
 <b>🌡️ 환경 데이터 안내</b><br>
 온도·습도·pH·EC 같은 환경은 <b>같은 스마트팜에 있는 모든 개체가 함께 겪은 배경</b>예요.
-그래서 환경 변화 자체가 '개체 차이의 직접 원인'이라고 바로 연결하지는 않아요. (개체 차이는 개체별 위치·뿌리 상태·유전자 등 여러 요인이 함께 작용할 수 있어요.)
+그래서 환경 변화 자체가 '개체 차이의 직접 원인'이라고 바로 연결하지는 않아요.
+(개체 차이는 개체별 위치·뿌리 상태·유전자 등 여러 요인이 함께 작용할 수 있어요.)
 이 탭은 <b>실험 기간 동안 환경이 어떻게 변했는지</b>를 확인하는 용도로 봐 주세요.
 </div>
 """, unsafe_allow_html=True)
@@ -756,7 +741,6 @@ with tabs[4]:
         else:
             env_cols = get_cols(env_df, ["temperature", "humidity", "ph", "ec", "water_temp", "co2"])
 
-            # 일별 평균 작은 그래프 나란히 (있는 열만)
             if "time" in env_df.columns and env_cols:
                 env2 = env_df.copy()
                 env2["date"] = env2["time"].dt.date
@@ -774,9 +758,8 @@ with tabs[4]:
                 fig_env_daily.update_layout(font=dict(family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"), height=240,
                                             showlegend=False, margin=dict(t=30, b=30, l=30, r=10))
                 st.plotly_chart(fig_env_daily, width="stretch")
-                st.markdown('<p class="ts-line">이 그래프 읽는 법: 각 작은 그래프가 환경 항목 하나씩이에요. 위로 올라가면 그날 평균이 높아진 것, 아래로 내려가면 낮아진 거예요.</p>', unsafe_allow_html=True)
+                st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: 각 작은 그래프가 환경 항목 하나씩이에요. 위로 올라가면 그날 평균이 높아진 것, 아래로 내려가면 낮아진 거예요.</p>", unsafe_allow_html=True)
 
-            # 고른 항목의 날짜별 평균·최고 꺾은선 + 온도 30 이상 구간
             if env_cols:
                 sel_env = st.selectbox("📊 날짜별 꺾은선으로 볼 환경 항목", env_cols, index=0 if "temperature" in env_cols else 0)
                 if "time" in env_df.columns:
@@ -799,19 +782,19 @@ with tabs[4]:
                             total = len(hi)
                             pct30 = n30 / total * 100 if total > 0 else 0
                             fig_t.add_hline(y=30, line_dash="dash", line_color="#E91E63", annotation_text="30 °C (탐색용 기준)")
+                            dates30 = sorted(set(str(d.date()) for d in hi30.index.to_series().dt.date))
                             st.markdown(f"""
 <div class="warn-box">
 <b>🌡️ 온도 30 °C 이상 기록 (탐색용 기준, 피해 기준 아님)</b><br>
  30 °C 이상 기록 수: <b>{n30}건</b> / 전체 {total}건 → 비율 <b>{pct30:.1f}%</b><br>
- 해당 날짜: {', '.join(sorted(set(str(d.date()) for d in hi30.index.to_series().dt.date)))}
+ 해당 날짜: {', '.join(dates30)}
 </div>
 """, unsafe_allow_html=True)
                             st.caption("※ 30 °C는 이 실험에서 '높은 온도 구간'을 살펴보기 위한 탐색용 기준일 뿐, 극지식물에 피해가 발생하는 온도 기준과는 달라요.")
                     fig_t.update_layout(xaxis_title="날짜", yaxis_title=sel_env, font=dict(family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"))
                     st.plotly_chart(fig_t, width="stretch")
-                    st.markdown('<p class="ts-line">이 그래프 읽는 법: 파란 선이 날짜별 평균, 주황 점선이 그 날짜 중 최고값이에요. 온도가 30 °C를 넘는 날은 분홍 점선으로 표시했어요(있는 경우).</p>', unsafe_allow_html=True)
+                    st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: 파란 선이 날짜별 평균, 주황 점선이 그 날짜 중 최고값이에요. 온도가 30 °C를 넘는 날은 분홍 점선으로 표시했어요(있는 경우).</p>", unsafe_allow_html=True)
 
-            # 날짜×시각 히트맵
             if "time" in env_df.columns and env_cols:
                 hc = st.selectbox("📅 날짜×시각 히트맵 항목", env_cols, index=0)
                 hm = env_df.pivot_table(index=env_df["time"].dt.date, columns=env_df["time"].dt.hour, values=hc, aggfunc="mean")
@@ -819,9 +802,8 @@ with tabs[4]:
                 fig_hm = px.imshow(hm, text_auto=".1f", color_continuous_scale="Viridis", title=f"{hc} 날짜×시각 히트맵 (빈 칸 = 센서 기록 없음)")
                 fig_hm.update_layout(font=dict(family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"))
                 st.plotly_chart(fig_hm, width="stretch")
-                st.markdown('<p class="ts-line">이 그래프 읽는 법: 세로축이 날짜, 가로축이 시각(0~23시), 색이 진할수록 값이 큰 거예요. 빈 칸(하얀색)은 그 시각에 센서 기록이 없는 거예요.</p>', unsafe_allow_html=True)
+                st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: 세로축이 날짜, 가로축이 시각(0~23시), 색이 진할수록 값이 큰 거예요. 빈 칸(하얀색)은 그 시각에 센서 기록이 없는 거예요.</p>", unsafe_allow_html=True)
 
-            # 요약 표 + 다운로드
             if env_cols:
                 rows = []
                 for c in env_cols:
@@ -837,7 +819,6 @@ with tabs[4]:
                 fname = env_file.name if env_file is not None else "environment.csv"
                 st.download_button("📥 환경 CSV 다운로드", csv_bytes, file_name=fname, mime="text/csv")
 
-            # 데이터 점검 (환경)
             st.markdown('<div class="kpi-card"><h3 style="margin-top:0;">🔍 환경 데이터 점검 (열별 유효·빈 값)</h3></div>', unsafe_allow_html=True)
             rows = []
             for col in env_df.columns:
