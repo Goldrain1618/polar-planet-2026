@@ -286,7 +286,7 @@ with tabs[0]:
             else:
                 c4.metric("평균 온도", "—")
             c5.metric("환경 기록 수", f"{len(env_df)}건")
-            if "time" in env_df.columns:
+            if "time" in env_df.columns and pd.api.types.is_datetime64_any_dtype(env_df["time"]):
                 tmin = env_df["time"].min()
                 tmax = env_df["time"].max()
                 c6.metric("기록 기간", f"{tmin.strftime('%Y-%m-%d')} ~ {tmax.strftime('%Y-%m-%d')}")
@@ -415,7 +415,6 @@ with tabs[1]:
                 st.warning("⚠️ 이 값은 잎 수와 생중량의 직선 관계만 반영한 추정치예요. 실제 무게를 보장하지 않아요.")
 
             mean_w = growth_df["생중량"].dropna().mean()
-            rows_rmse = []
             err_leaf = []
             err_shoot = []
             err_mean = []
@@ -636,7 +635,9 @@ with tabs[3]:
                 med_w = w.median()
                 std_w = w.std(ddof=1)
                 cv_w = (std_w / mean_w * 100) if mean_w > 0 else None
-                figh = px.histogram(w, nbins="sturges", title="생중량 분포 (히스토그램)")
+                # Sturges 공식으로 bin 개수(정수) 계산 → nbins="sturges" 문자열 오류 방지
+                n_bins = int(np.ceil(1 + np.log2(len(w)))) if len(w) > 0 else 10
+                figh = px.histogram(w, nbins=n_bins, title="생중량 분포 (히스토그램)")
                 figh.add_vline(x=mean_w, line_dash="dash", line_color="#2196F3", annotation_text=f"평균 {mean_w:.2f} g")
                 figh.add_vline(x=med_w, line_dash="dot", line_color="#FF9800", annotation_text=f"중앙값 {med_w:.2f} g")
                 figh.update_yaxes(title_text="개체 수")
@@ -741,6 +742,7 @@ with tabs[4]:
         else:
             env_cols = get_cols(env_df, ["temperature", "humidity", "ph", "ec", "water_temp", "co2"])
 
+            # 일별 평균 작은 그래프 (있는 열만)
             if "time" in env_df.columns and env_cols:
                 env2 = env_df.copy()
                 env2["date"] = env2["time"].dt.date
@@ -760,6 +762,7 @@ with tabs[4]:
                 st.plotly_chart(fig_env_daily, width="stretch")
                 st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: 각 작은 그래프가 환경 항목 하나씩이에요. 위로 올라가면 그날 평균이 높아진 것, 아래로 내려가면 낮아진 거예요.</p>", unsafe_allow_html=True)
 
+            # 고른 항목의 날짜별 평균·최고 꺾은선 + 온도 30 이상 구간
             if env_cols:
                 sel_env = st.selectbox("📊 날짜별 꺾은선으로 볼 환경 항목", env_cols, index=0 if "temperature" in env_cols else 0)
                 if "time" in env_df.columns:
@@ -795,15 +798,21 @@ with tabs[4]:
                     st.plotly_chart(fig_t, width="stretch")
                     st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: 파란 선이 날짜별 평균, 주황 점선이 그 날짜 중 최고값이에요. 온도가 30 °C를 넘는 날은 분홍 점선으로 표시했어요(있는 경우).</p>", unsafe_allow_html=True)
 
-            if "time" in env_df.columns and env_cols:
+            # 날짜×시각 히트맵 — dt accessor 사용 전 datetime 여부 확인, 문자열은 strftime으로 변환
+            if "time" in env_df.columns and env_cols and pd.api.types.is_datetime64_any_dtype(env_df["time"]):
                 hc = st.selectbox("📅 날짜×시각 히트맵 항목", env_cols, index=0)
-                hm = env_df.pivot_table(index=env_df["time"].dt.date, columns=env_df["time"].dt.hour, values=hc, aggfunc="mean")
-                hm.index = pd.to_datetime(hm.index)
+                date_str = env_df["time"].dt.strftime("%Y-%m-%d")
+                hour_int = env_df["time"].dt.hour
+                hm = env_df.pivot_table(index=date_str, columns=hour_int, values=hc, aggfunc="mean")
+                hm = hm.sort_index()
                 fig_hm = px.imshow(hm, text_auto=".1f", color_continuous_scale="Viridis", title=f"{hc} 날짜×시각 히트맵 (빈 칸 = 센서 기록 없음)")
                 fig_hm.update_layout(font=dict(family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"))
                 st.plotly_chart(fig_hm, width="stretch")
                 st.markdown("<p class=\"ts-line\">이 그래프 읽는 법: 세로축이 날짜, 가로축이 시각(0~23시), 색이 진할수록 값이 큰 거예요. 빈 칸(하얀색)은 그 시각에 센서 기록이 없는 거예요.</p>", unsafe_allow_html=True)
+            elif "time" in env_df.columns:
+                st.info("시간 열이 날짜/시간 형식으로 인식되지 않아 히트맵을 그리지 못했어요. CSV 시간 열 형식을 확인해 주세요.")
 
+            # 요약 표 + 다운로드
             if env_cols:
                 rows = []
                 for c in env_cols:
