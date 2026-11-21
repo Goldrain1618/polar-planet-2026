@@ -16,12 +16,12 @@ st.markdown("""
 html, body, [class*="css"] {
    font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
 }
-.banner {background: linear-gradient(90deg, #e6f7e6 0%, #c8e6c9 100%); border-radius: 14px; padding: 18px 22px; margin-bottom: 18px;}
-.banner h1 {margin: 0; font-size: 1.55rem;}
-.hypothesis-box, .conclusion-box, .note-box, .warn-box {border-radius: 8px; padding: 12px 14px; margin-bottom: 12px;}
-.hypothesis-box {background: #f5f9ff; border-left: 6px solid #2196F3;} .conclusion-box {background: #f1f8e9; border-left: 6px solid #4CAF50;}
-.note-box {background: #fff8e1; border-left: 6px solid #FF9800; font-size: 0.92rem;} .warn-box {background: #fce4ec; border-left: 6px solid #E91E63;}
-.ts-line {font-size: 0.82rem; color: #666; font-style: italic; margin: 4px 0 14px 0;}
+.banner {background: linear-gradient(120deg, #1b5e20 0%, #2e7d32 45%, #00897b 100%); border-radius: 20px; padding: 26px 30px; margin-bottom: 16px; box-shadow: 0 10px 28px rgba(27,94,32,.28); position: relative; overflow: hidden;} .banner::after {content: "🌱"; position: absolute; right: 26px; top: -6px; font-size: 130px; opacity: .16;} .banner h1 {margin: 0; font-size: 1.95rem; font-weight: 800; color: #fff;} .banner p {color: #e8f5e9 !important; margin: 8px 0 0 0; max-width: 85%;}
+.chip {display: inline-block; background: rgba(255,255,255,.17); border: 1px solid rgba(255,255,255,.4); color: #fff; border-radius: 999px; padding: 5px 14px; margin: 14px 8px 0 0; font-size: .88rem; font-weight: 600;} .hypothesis-box, .conclusion-box, .note-box, .warn-box {border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; box-shadow: 0 3px 12px rgba(0,0,0,.06);}
+.hypothesis-box {background: linear-gradient(135deg, #e3f2fd, #f5f9ff); border-left: 7px solid #1e88e5;} .conclusion-box {background: linear-gradient(135deg, #e8f5e9, #f9fdf6); border-left: 7px solid #43a047;} .note-box {background: #fff8e1; border-left: 7px solid #fb8c00; font-size: 0.92rem;} .warn-box {background: #fce4ec; border-left: 7px solid #e91e63;}
+.badge {display: inline-block; padding: 4px 14px; border-radius: 999px; font-weight: 800; color: #fff; background: #2e7d32; margin: 0 4px 6px 0; box-shadow: 0 2px 6px rgba(46,125,50,.35);} .badge.no {background: #ef6c00;} .ts-line {font-size: 0.83rem; color: #607d8b; background: #f6f8fa; border-radius: 8px; padding: 6px 12px; margin: 2px 0 18px 0;}
+div[data-testid="stMetric"] {background: #fff; border-top: 5px solid #43a047 !important; box-shadow: 0 4px 14px rgba(0,0,0,.07);} div[data-testid="stMetricValue"] {font-weight: 800; color: #1b5e20;} .stTabs [role="tab"] {padding: 10px 16px; border-radius: 12px 12px 0 0;} .stTabs [role="tab"] p {font-size: 1.05rem; font-weight: 700;} .stTabs [role="tab"][aria-selected="true"] {background: #e8f5e9;}
+h3 {border-left: 6px solid #43a047; padding-left: 12px !important;} section[data-testid="stSidebar"] {background: linear-gradient(180deg, #e8f5e9 0%, #ffffff 60%);}
 </style>
 """, unsafe_allow_html=True)
 
@@ -95,13 +95,16 @@ def load_data(raw):
 # ---------- 도우미 함수 ----------
 def box(kind, html):
     st.markdown(f'<div class="{kind}">{html}</div>', unsafe_allow_html=True)
+def verdict(ok):  # 판정 배지
+    return '<span class="badge">지지됨 ✅</span>' if ok else '<span class="badge no">지지되지 않음 ⚠️</span>'
 def how_to_read(text):
     st.markdown(f'<p class="ts-line">이 그래프 읽는 법: {text}</p>', unsafe_allow_html=True)
 
 def show(fig, height=420, title=None):
-    fig.update_layout(font=dict(family=FONT), height=height, template="plotly_white", margin=dict(l=40, r=20, t=60, b=40))
+    fig.update_layout(font=dict(family=FONT, size=13), height=height, template="plotly_white", margin=dict(l=40, r=20, t=64, b=40),
+                      title_font=dict(size=18, color="#1b5e20"), hoverlabel=dict(bgcolor="white", font_size=13), plot_bgcolor="#fcfdfc")
     if title:
-        fig.update_layout(title=title)
+        fig.update_layout(title=dict(text=f"<b>{title}</b>", font=dict(size=18, color="#1b5e20")))
     st.plotly_chart(fig, width="stretch")
 
 def has(df, c):
@@ -186,9 +189,12 @@ cv_dn = cv(growth_df["지하부 질량"]) if "지하부 질량" in g_cols else N
 h1_ok = (r_leaf is not None and r_shoot is not None and r_leaf > 0 and r_leaf > r_shoot)
 h2_ok = (cv_up is not None and cv_dn is not None and cv_dn > cv_up)
 
+chips = "".join(f'<span class="chip">{t}</span>' for t in [f"🌿 개체 {len(growth_df)}개" if not growth_df.empty else "",
+    f"🍃 잎 수 r = {r_leaf:.2f}" if r_leaf is not None else "", f"🟤 지하부 CV {cv_dn:.0f}%" if cv_dn is not None else "",
+    f"🗂️ 환경 기록 {len(env_df):,}건" if not env_df.empty else ""] if t)
 st.markdown(f"""<div class="banner"><h1>🌱 {school or '우리 학교'} 극지식물 개체별 생육 차이 분석 대시보드</h1>
-<p style="margin-top:6px;color:#333;">같은 스마트팜에서 자란 극지식물도 개체마다 잎 수·길이·무게가 다릅니다. 무엇이 생중량을 더 잘 설명하는지(가설 1),
-지상부·지하부 중 어느 쪽의 개체 간 상대적 차이가 더 큰지(가설 2)를 데이터로 확인합니다.</p></div>""", unsafe_allow_html=True)
+<p>같은 스마트팜에서 자란 극지식물도 개체마다 잎 수·길이·무게가 다릅니다. 무엇이 생중량을 더 잘 설명하는지(가설 1),
+지상부·지하부 중 어느 쪽의 개체 간 상대적 차이가 더 큰지(가설 2)를 데이터로 확인합니다.</p>{chips}</div>""", unsafe_allow_html=True)
 
 tabs = st.tabs(["📋 개요", "🍃 가설 1 — 키보다 잎 수", "🌱 가설 2 — 숨은 차이는 땅속에", "📊 개체별 비교", "🌡️ 환경 데이터"])
 
@@ -201,13 +207,13 @@ with tabs[0]:
         with h1:
             box("hypothesis-box", "<b>가설 1 — 키보다 잎 수</b><br>생중량은 지상부 길이보다 <b>잎 수</b>와 더 강한 양의 상관관계를 보일 것이다.")
             if r_leaf is not None and r_shoot is not None:
-                box("conclusion-box", f"<b>📊 {'지지됨 ✅' if h1_ok else '지지되지 않음 ⚠️'}</b><br>잎 수 r = {r_leaf:.3f}, 지상부 길이 r = {r_shoot:.3f}")
+                box("conclusion-box", f"{verdict(h1_ok)}<br>잎 수 r = {r_leaf:.3f}, 지상부 길이 r = {r_shoot:.3f}")
             else:
                 st.info("가설 1 판정에는 잎 수·지상부 길이·생중량 열이 필요해요.")
         with h2:
             box("hypothesis-box", "<b>가설 2 — 숨은 차이는 땅속에</b><br>개체 간 상대적 질량 변이(변동계수)는 지상부보다 <b>지하부</b>에서 더 클 것이다.")
             if cv_up is not None and cv_dn is not None:
-                box("conclusion-box", f"<b>📊 {'지지됨 ✅' if h2_ok else '지지되지 않음 ⚠️'}</b><br>"
+                box("conclusion-box", f"{verdict(h2_ok)}<br>"
                     f"지상부 CV = {cv_up:.1f}%, 지하부 CV = {cv_dn:.1f}% (지하부 ÷ 지상부 = {cv_dn / cv_up:.2f}배)")
             else:
                 st.info("가설 2 판정에는 지상부·지하부 질량 열이 필요해요.")
@@ -269,9 +275,7 @@ with tabs[1]:
                                 subplot_titles=(f"🍃 잎 수 vs 생중량 (r = {r_leaf:.2f})", f"📏 지상부 길이 vs 생중량 (r = {r_shoot:.2f})"))
             add_scatter(fig, growth_df, "잎 수", "생중량", "#4CAF50", 1, 1)
             add_scatter(fig, growth_df, "지상부 길이", "생중량", "#2196F3", 1, 2)
-            fig.update_xaxes(title_text="잎 수(장)", row=1, col=1)
-            fig.update_xaxes(title_text="지상부 길이(mm)", row=1, col=2)
-            fig.update_yaxes(title_text="생중량(g)", row=1, col=1)
+            fig.update_layout(xaxis_title="잎 수(장)", xaxis2_title="지상부 길이(mm)", yaxis_title="생중량(g)")
             show(fig)
             how_to_read("점 하나가 개체 하나예요. 점이 분홍 추세선 가까이 모여 있을수록 r이 1에 가깝고 관계가 강해요.")
 
@@ -281,8 +285,7 @@ with tabs[1]:
                 if r is not None:
                     rows.append({"지표": c, "r": round(r, 3)})
             if rows:
-                fig = px.bar(pd.DataFrame(rows), x="지표", y="r", text="r", color="지표", color_discrete_sequence=["#4CAF50", "#2196F3", "#795548"])
-                fig.update_traces(textposition="outside")
+                fig = px.bar(pd.DataFrame(rows), x="지표", y="r", text_auto=".3f", color="지표", color_discrete_sequence=["#4CAF50", "#2196F3", "#795548"])
                 fig.update_layout(showlegend=False, yaxis_range=[min(0, min(r["r"] for r in rows)) - 0.1, 1.1])
                 show(fig, 360, "생중량과 각 생육 지표의 상관계수 r")
                 how_to_read("막대가 높을수록 그 지표가 클 때 생중량도 큰 경향이 강해요.")
@@ -325,7 +328,7 @@ with tabs[1]:
             else:
                 st.info("그룹 비교를 할 값이 부족해요.")
 
-            box("conclusion-box", f"<b>📊 판정: 가설 1 — {'지지됨 ✅' if h1_ok else '지지되지 않음 ⚠️'}</b><br>"
+            box("conclusion-box", f"<b style='font-size:1.1rem'>📊 판정: 가설 1</b> {verdict(h1_ok)}<br>"
                 f"잎 수 r = {r_leaf:.3f}, 지상부 길이 r = {r_shoot:.3f} → 생중량과 더 강하게 관련된 쪽은 "
                 f"<b>{'잎 수' if abs(r_leaf) > abs(r_shoot) else '지상부 길이'}</b>예요.<br>⚠️ 상관관계일 뿐 원인을 뜻하지는 않아요.")
     except Exception as e:
@@ -353,8 +356,7 @@ with tabs[2]:
             for name, v in [("지상부 질량", up), ("지하부 질량", dn)]:
                 rows.append({"부분": name, "평균(g)": round(v.mean(), 3), "표준편차(g)": round(v.std(ddof=1), 3), "분산(g²)": round(v.var(ddof=1), 3), "CV(%)": round(cv(v), 1)})
             st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
-            bigger_var = "지상부" if up.var(ddof=1) > dn.var(ddof=1) else "지하부"
-            box("note-box", f"<b>📌 주의</b><br>분산(절대적인 흩어짐)은 <b>{bigger_var}</b>가 더 커요 "
+            box("note-box", f"<b>📌 주의</b><br>분산(절대적인 흩어짐)은 <b>{'지상부' if up.var(ddof=1) > dn.var(ddof=1) else '지하부'}</b>가 더 커요 "
                 f"(지상부 {up.var(ddof=1):.3f} g², 지하부 {dn.var(ddof=1):.3f} g²). "
                 f"평균도 지상부 {up.mean():.2f} g, 지하부 {dn.mean():.2f} g로 달라서, 이번 비교는 <b>평균에 비한 흩어짐(CV)</b>으로 판단해요.")
 
@@ -375,7 +377,7 @@ with tabs[2]:
                     msg += f"<br>0 g 개체를 뺀 {len(both)}개체: 지상부 CV {cu:.1f}%, 지하부 CV {cd:.1f}% → 가설 2 방향 <b>{'유지됨 ✅' if cd > cu else '바뀜 ⚠️'}</b>"
                 box("warn-box", msg)
 
-            box("conclusion-box", f"<b>📊 판정: 가설 2 — {'지지됨 ✅' if h2_ok else '지지되지 않음 ⚠️'}</b><br>"
+            box("conclusion-box", f"<b style='font-size:1.1rem'>📊 판정: 가설 2</b> {verdict(h2_ok)}<br>"
                 f"지상부 CV = {cv_up:.1f}%, 지하부 CV = {cv_dn:.1f}% → 평균에 비한 개체 차이는 "
                 f"<b>{'지하부' if cv_dn > cv_up else '지상부'}</b>에서 더 컸어요 ({abs(cv_dn - cv_up):.1f}%p 차이).")
     except Exception as e:
@@ -440,9 +442,7 @@ with tabs[4]:
             st.info("온도·습도·pH·EC 중에 알아볼 수 있는 열이 없어요.")
         else:
             if has_time:
-                et = env_df.dropna(subset=["time"]).copy()
-                et["날짜"] = et["time"].dt.date
-                et["시각"] = et["time"].dt.hour
+                et = env_df.dropna(subset=["time"]).assign(날짜=lambda x: x["time"].dt.date, 시각=lambda x: x["time"].dt.hour)
                 daily = et.groupby("날짜")[e_cols].mean()
                 n, colors = len(e_cols), ["#E64A19", "#1976D2", "#7B1FA2", "#388E3C"]
                 fig = make_subplots(rows=(n + 1) // 2, cols=2 if n > 1 else 1, vertical_spacing=0.18, subplot_titles=[ENV_KO[c] for c in e_cols])
