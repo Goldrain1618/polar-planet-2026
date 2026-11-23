@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 import streamlit as st
 from plotly.subplots import make_subplots
 
-st.set_page_config(page_title="극지식물 생육 차이 분석", page_icon="🌱", layout="wide")
+st.set_page_config(page_title="송도고 새싹 2팀 | 극지식물 생육 차이 분석", page_icon="🌱", layout="wide")
 
 # ---------- 한글 폰트 + 디자인 CSS ----------
 st.markdown("""
@@ -16,7 +16,7 @@ st.markdown("""
 html, body, [class*="css"] {
    font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
 }
-.banner {background: linear-gradient(120deg, #1b5e20 0%, #2e7d32 45%, #00897b 100%); border-radius: 20px; padding: 26px 30px; margin-bottom: 16px; box-shadow: 0 10px 28px rgba(27,94,32,.28); position: relative; overflow: hidden;} .banner::after {content: "🌱"; position: absolute; right: 26px; top: -6px; font-size: 130px; opacity: .16;} .banner h1 {margin: 0; font-size: 1.95rem; font-weight: 800; color: #fff;} .banner p {color: #e8f5e9 !important; margin: 8px 0 0 0; max-width: 85%;}
+.banner {background: linear-gradient(120deg, #1b5e20 0%, #2e7d32 45%, #00897b 100%); border-radius: 20px; padding: 26px 30px; margin-bottom: 16px; box-shadow: 0 10px 28px rgba(27,94,32,.28); position: relative; overflow: hidden;} .banner::after {content: "🌱"; position: absolute; right: 26px; top: -6px; font-size: 130px; opacity: .16;} .banner h1 {margin: 0; font-size: 1.95rem; font-weight: 800; color: #fff;} .banner p {color: #e8f5e9 !important; margin: 8px 0 0 0; max-width: 85%;} .team {display: inline-block; margin-left: 10px; padding: 3px 14px; border-radius: 999px; background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.45); font-size: 1rem; font-weight: 700; vertical-align: middle;}
 .chip {display: inline-block; background: rgba(255,255,255,.17); border: 1px solid rgba(255,255,255,.4); color: #fff; border-radius: 999px; padding: 5px 14px; margin: 14px 8px 0 0; font-size: .88rem; font-weight: 600;} .hypothesis-box, .conclusion-box, .note-box, .warn-box {border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; box-shadow: 0 3px 12px rgba(0,0,0,.06);}
 .hypothesis-box {background: linear-gradient(135deg, #e3f2fd, #f5f9ff); border-left: 7px solid #1e88e5;} .conclusion-box {background: linear-gradient(135deg, #e8f5e9, #f9fdf6); border-left: 7px solid #43a047;} .note-box {background: #fff8e1; border-left: 7px solid #fb8c00; font-size: 0.92rem;} .warn-box {background: #fce4ec; border-left: 7px solid #e91e63;}
 .badge {display: inline-block; padding: 4px 14px; border-radius: 999px; font-weight: 800; color: #fff; background: #2e7d32; margin: 0 4px 6px 0; box-shadow: 0 2px 6px rgba(46,125,50,.35);} .badge.no {background: #ef6c00;} .ts-line {font-size: 0.83rem; color: #607d8b; background: #f6f8fa; border-radius: 8px; padding: 6px 12px; margin: 2px 0 18px 0;}
@@ -166,7 +166,7 @@ with st.spinner("CSV 읽는 중..."):
 
 # 학교명: 파일명 앞부분 ('송도고_생육결과데이터.csv' → '송도고')
 first = growth_file if growth_file is not None else env_file
-school = os.path.splitext(os.path.basename(first.name))[0].split("_")[0].strip() if first is not None else ""
+school = (os.path.splitext(os.path.basename(first.name))[0].split("_")[0].strip() if first is not None else "") or "송도고"
 g_cols = [c for c in GROWTH if has(growth_df, c)]
 e_cols = [c for c in ENV if has(env_df, c)]
 has_time = (not env_df.empty) and "time" in env_df.columns and env_df["time"].notna().sum() >= 2
@@ -192,7 +192,7 @@ h2_ok = (cv_up is not None and cv_dn is not None and cv_dn > cv_up)
 chips = "".join(f'<span class="chip">{t}</span>' for t in [f"🌿 개체 {len(growth_df)}개" if not growth_df.empty else "",
     f"🍃 잎 수 r = {r_leaf:.2f}" if r_leaf is not None else "", f"🟤 지하부 CV {cv_dn:.0f}%" if cv_dn is not None else "",
     f"🗂️ 환경 기록 {len(env_df):,}건" if not env_df.empty else ""] if t)
-st.markdown(f"""<div class="banner"><h1>🌱 {school or '우리 학교'} 극지식물 개체별 생육 차이 분석 대시보드</h1>
+st.markdown(f"""<div class="banner"><h1>🌱 {school} 극지식물 개체별 생육 차이 분석 대시보드<span class="team">송도고 새싹 2팀</span></h1>
 <p>같은 스마트팜에서 자란 극지식물도 개체마다 잎 수·길이·무게가 다릅니다. 무엇이 생중량을 더 잘 설명하는지(가설 1),
 지상부·지하부 중 어느 쪽의 개체 간 상대적 차이가 더 큰지(가설 2)를 데이터로 확인합니다.</p>{chips}</div>""", unsafe_allow_html=True)
 
@@ -428,7 +428,7 @@ with tabs[3]:
                 st.info("히트맵을 그리려면 숫자 항목이 2개 이상, 값이 3개 이상 필요해요.")
 
             st.download_button("📥 생육 데이터 CSV 다운로드", growth_df.to_csv(index=False).encode("utf-8-sig"),
-                               file_name=f"{school or '학교'}_생육결과_정리.csv", mime="text/csv")
+                               file_name=f"{school}_생육결과_정리.csv", mime="text/csv")
     except Exception as e:
         st.warning(f"⚠️ 이 부분은 데이터 형식 때문에 표시하지 못했어요: {e}")
 
@@ -495,6 +495,6 @@ with tabs[4]:
                 st.subheader("📋 환경 데이터 요약")
                 st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
             st.download_button("📥 환경 데이터 CSV 다운로드", env_df.to_csv(index=False).encode("utf-8-sig"),
-                               file_name=f"{school or '학교'}_환경데이터_정리.csv", mime="text/csv")
+                               file_name=f"{school}_환경데이터_정리.csv", mime="text/csv")
     except Exception as e:
         st.warning(f"⚠️ 이 부분은 데이터 형식 때문에 표시하지 못했어요: {e}")
